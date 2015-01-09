@@ -21,6 +21,37 @@
             display: inline-block;
         }
 
+        #cost {
+            font-size: 16px;
+            text-align: center;
+        }
+
+        #cost-container {
+            border: 2px solid #9b59b6;
+            border-radius: 5px;
+            max-width: 480px;
+            padding: 10px;
+            margin: 0 auto;
+            margin-bottom: 15px;
+        }
+
+        .equals {
+            font-size: 20px;
+            font-weight: bold;
+            color: red;
+        }
+
+        .subtotal {
+            color: black;
+            font-weight: bold;
+        }
+
+        .total {
+            font-size: 22px;
+            font-weight: bold;
+            color: black;
+        }
+
         h1 {
             text-align: center;
             font-weight: 300;
@@ -170,6 +201,32 @@
                     return _.max(_.keys(uptimeValues), function (k) { return uptimeValues[k]; });
                 }
 
+                function drawCost() {
+                    var all = _.flatten(_.reduce(data, function (m, v, k) {
+                            return m.concat(v);
+                        }, [])),
+                        filtered = _.reject(all, function (v) { return v === 'o' || v === 'g'; });
+
+                    var totals = _.reduce(filtered, function (m, u) {
+                        m[u] += 1;
+                        return m;
+                    }, {r: 0, y: 0});
+
+                    var cost = totals.r * 3 * 185 + totals.y * 1 * 185;
+
+                    console.log("cost is", cost);
+
+                    var format = d3.format(",.2f");
+
+                    d3.select("#cost")
+                        .data([cost])
+                        .html(function (d) {
+                            return '<span class="subtotal">' + totals.r + ' hrs</span> <span>unavailable</span> * <span>$185.00</span> * 3 <span>people<span> + <br/>' +
+                                '<span class="subtotal">' + totals.y + ' hrs</span> <span>partial</span> * <span>$185.00</span> * 1 <span>person</span> <p class="equals">=</p> ' +
+                                '<span class="total">$' + format(cost) + '</span>';
+                        });
+                }
+
                 function drawWeeks() {
                     var weeks = _.keys(data);
 
@@ -256,6 +313,7 @@
                 }
 
                 drawWeeks();
+                drawCost();
 
                 chart = c3.generate({
                     bindto: '#chart',
@@ -270,6 +328,8 @@
                         type : 'donut'
                     }
                 });
+
+                setWeek(_.last(_.keys(data)));
             });
         </script>
     </head>
@@ -299,7 +359,14 @@
             </div>
         </div>
 
+        <div id="cost-container">
+            <h2>Total Cost To-Date</h2>
+            <div id="cost">
+            </div>
+        </div>
+
         <ul id="weeks"></ul>
+
         <h2 id="daterange"></h2>
 
         <div>
