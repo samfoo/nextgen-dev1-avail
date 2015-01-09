@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+
+        body {
+          font: 14px "Open Sans" sans-serif;
+          color: #7f8c8d;
+        }
+
+        #legend {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+        }
+
+        #legend .item {
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 300;
+            font-size: 50px
+        }
+
+        h2 {
+            text-align: center;
+            font-weight: normal;
+        }
+
+        ul {
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            display: table;
+            margin: 0 auto;
+            padding: 10px;
+            transition: all .2s ease-in-out;
+        }
+
+        li:hover {
+            cursor: pointer;
+            transform: scale(1.1);
+       }
+
+        li > div {
+            display: table-row;
+        }
+
+        .week {
+            display: table-cell;
+            width: 40%;
+        }
+
+        .pixel {
+            float: left;
+            width: 5px;
+            height: 5px;
+        }
+
+        .clear:after {
+            clear: both;
+        }
+
+        .spark {
+            height: 5px;
+            display: table-cell;
+        }
+
+        .day {
+          fill: #fff;
+          stroke: #ccc;
+        }
+
+        .r {
+            background: #e74c3c;
+        }
+
+        .g {
+            background: #2ecc71;
+        }
+
+        .y {
+            background: #f1c40f;
+        }
+
+        .o {
+            background: #bdc3c7;
+        }
+
+        table {
+            margin: 0 auto;
+        }
+
+        td {
+            height: 40px;
+            width: 40px;
+        }
+
+        th {
+            font-weight: normal;
+        }
+
+        .tile {
+            border-radius: 5px;
+        }
+
+        </style>
+
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.8/c3.css" type="text/css">
+        <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.8/c3.js"></script>
+
+        <script>
+            $(document).ready(function () {
+                var days = [
+                        { name: 'Monday', abbr: 'Mo' },
+                        { name: 'Tuesday', abbr: 'Tu' },
+                        { name: 'Wednesday', abbr: 'We' },
+                        { name: 'Thursday', abbr: 'Th' },
+                        { name: 'Friday', abbr: 'Fr' },
+                    ],
+                    hours = ['9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p', '5p'];
+
+                var data = {
+                    '15 Dec - 19 Dec': [
+                        ['o','o','o','o','o','o','o','o', 'o'],
+                        ['o','o','o','o','o','o','o','o', 'o'],
+                        ['o','o','o','o','o','o','o','o', 'o'],
+                        ['y', 'y', 'y', 'r', 'y', 'y', 'r', 'y', 'y'],
+                        ['y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'g']
+                    ],
+                    '22 Dec - 24 Dec': [
+                        ['y', 'y', 'y', 'y', 'y', 'y', 'y', 'g', 'g'],
+                        ['r', 'r', 'r', 'r', 'r', 'r', 'r', 'g', 'g'],
+                        ['g', 'g', 'g', 'g', 'r', 'r', 'r', 'r', 'r'],
+                        ['o','o','o','o','o','o','o','o', 'o'],
+                        ['o','o','o','o','o','o','o','o', 'o']
+                    ],
+                    '5 Jan - 9 Jan': [
+                        ['y', 'y', 'y', 'y', 'y', 'y', 'y', 'y', 'y'],
+                        ['r', 'y', 'r', 'r', 'y', 'r', 'y', 'y', 'y'],
+                        ['g', 'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g'],
+                        ['y', 'y', 'r', 'r', 'r', 'r', 'r', 'r', 'r'],
+                        ['r', 'r','r', 'r','r', 'r','r', 'r','y']
+                    ]
+                };
+
+                var chart;
+
+                var table = d3.select("#vis");
+                var thead = table.append("thead").append("tr");
+                var tbody = table.append("tbody");
+
+                function quantizeWeekly(value) {
+                    var uptimes = _.flatten(data[value]),
+                        uptimeValues = _.reduce(uptimes, function (m, u) {
+                            m[u] += 1;
+                            return m;
+                        }, {r: 0, g: 0, y: 0});
+
+                    return _.max(_.keys(uptimeValues), function (k) { return uptimeValues[k]; });
+                }
+
+                function drawWeeks() {
+                    var weeks = _.keys(data);
+
+                    var listItem = d3
+                        .select("#weeks")
+                        .selectAll("li")
+                            .data(weeks)
+                            .enter()
+                            .append("li")
+                        .selectAll("div")
+                            .data(function (d, i) { return [d]; })
+                            .enter()
+                            .append("div")
+                                .on("click", function (d) { setWeek(d); })
+                                .append("div")
+                                    .attr("class", "week")
+                                    .text(function (d) { return d; })
+                                    .select(function () { return this.parentNode; })
+                                .append("section")
+                                    .attr("class", "spark clear")
+                                    .selectAll("div")
+                                        .data(function (d, i) { return _.flatten(data[d]); })
+                                        .enter()
+                                        .append("div")
+                                        .attr("class", function (d) {
+                                            return "pixel " + d;
+                                        });
+                }
+
+                function draw(week) {
+                    var uptimes = data[week];
+
+                    thead.selectAll("th")
+                        .data(['9am', '10am', '11am', '12am', '1pm', '2pm', '3pm', '4pm', '5pm'])
+                        .enter()
+                        .append("th")
+                        .text(function(d) { return d; });
+
+                    var rows = tbody
+                        .selectAll("tr")
+                            .data(uptimes);
+
+                    rows.enter().append("tr");
+
+                    var cells = rows.selectAll("td")
+                        .data(function (d, i) { return d; });
+
+                    cells
+                        .enter()
+                        .append("td");
+
+                    cells.attr("class", function (d) { return "tile " + d; });
+
+                    cells.exit().remove();
+                    rows.exit().remove();
+                }
+
+                function setWeek(week) {
+                    draw(week);
+                    drawChart(week);
+                }
+
+                function drawChart(week) {
+                    d3.select("#daterange").text(week);
+                    var uptimes = _.flatten(data[week]),
+                        uptimeValues = _.reduce(uptimes, function (m, u) {
+                            m[u] += 1;
+                            return m;
+                        }, {r: 0, g: 0, y: 0});
+
+                    chart.load({
+                        columns: [
+                            ["unavailable", uptimeValues.r],
+                            ["partial", uptimeValues.y],
+                            ["available", uptimeValues.g]
+                        ]
+                    });
+
+                    chart.data.colors({
+                        unavailable: "#e74c3c",
+                        partial: "#f1c40f",
+                        available: "#2ecc71"
+                    });
+                }
+
+                drawWeeks();
+
+                chart = c3.generate({
+                    bindto: '#chart',
+                    tooltip: {
+                        show: false
+                    },
+                    legend: {
+                        show: false
+                    },
+                    data: {
+                        columns: [],
+                        type : 'donut'
+                    }
+                });
+            });
+        </script>
+    </head>
+
+    <body class='antialiased'>
+        <h1 style="text-align: center; font-weight: 300; font-size: 50px">dev1 availability</h1>
+
+        <div id="legend">
+            <div>
+                <div class="item g"></div>
+                Available
+            </div>
+
+            <div>
+                <div class="item y"></div>
+                Partially Available
+            </div>
+
+            <div>
+                <div class="item r"></div>
+                Unavailable
+            </div>
+
+            <div>
+                <div class="item o"></div>
+                No data
+            </div>
+        </div>
+
+        <ul id="weeks"></ul>
+        <h2 id="daterange"></h2>
+
+        <div>
+            <table id="vis">
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="chart"></div>
+    </body>
+</html>
