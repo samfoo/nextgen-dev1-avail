@@ -185,11 +185,19 @@
                     ],
                     '12 Jan - 16 Jan': [
                         ['r', 'r', 'g', 'g', 'g', 'g', 'g', 'g', 'g'],
-                        ['g','g','g','o','o','o','o','o', 'o'],
+                        ['g', 'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g'],
+                        ['g', 'g', 'g', 'g', 'g', 'g', 'g', 'r', 'r'],
+						['r', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r'],
+						['r', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r']
+                    ],
+                    '19 Jan - 23 Jan': [
+                        ['r', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'g'],
+                        ['g', 'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g'],
+                        ['g', 'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g'],
                         ['o','o','o','o','o','o','o','o', 'o'],
-			['o','o','o','o','o','o','o','o', 'o'],
-			['o','o','o','o','o','o','o','o', 'o']
+                        ['o','o','o','o','o','o','o','o', 'o']
                     ]
+					
                 };
 
                 var chart;
@@ -197,6 +205,16 @@
                 var table = d3.select("#vis");
                 var thead = table.append("thead").append("tr");
                 var tbody = table.append("tbody");
+
+                function quantizeWeekly(value) {
+                    var uptimes = _.flatten(data[value]),
+                        uptimeValues = _.reduce(uptimes, function (m, u) {
+                            m[u] += 1;
+                            return m;
+                        }, {r: 0, g: 0, y: 0});
+
+                    return _.max(_.keys(uptimeValues), function (k) { return uptimeValues[k]; });
+                }
 
                 function drawCost() {
                     var all = _.flatten(_.reduce(data, function (m, v, k) {
@@ -310,7 +328,7 @@
                 }
 
                 drawWeeks();
-                //drawCost();
+                drawCost();
 
                 chart = c3.generate({
                     bindto: '#chart',
@@ -356,11 +374,11 @@
             </div>
         </div>
 
-        <!--<div id="cost-container">
+        <div id="cost-container">
             <h2>Total Cost To-Date</h2>
             <div id="cost">
             </div>
-        </div>-->
+        </div>
 
         <ul id="weeks"></ul>
 
