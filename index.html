@@ -35,6 +35,29 @@
             margin-bottom: 15px;
         }
 
+        #total-uptime {
+            font-weight: bold;
+            margin: 20px auto;
+        }
+
+        #total-uptime table {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        #total-uptime table td {
+            width: 50%;
+            padding: 0 50px;
+        }
+
+        #total-uptime .title {
+            text-align: right;
+        }
+
+        #total-uptime .value {
+            text-align: left;
+        }
+
         .equals {
             font-size: 20px;
             font-weight: bold;
@@ -107,6 +130,18 @@
         .day {
           fill: #fff;
           stroke: #ccc;
+        }
+
+        .r-text {
+            color: #e74c3c;
+        }
+
+        .g-text {
+            color: #2ecc71;
+        }
+
+        .y-text {
+            color: #f1c40f;
         }
 
         .r {
@@ -207,9 +242,9 @@
                     '2 Feb - 6 Feb': [
                         ['r', 'r', 'r', 'r', 'r', 'r', 'g', 'g', 'g'],
                         ['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o'],
-						['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o'],
                         ['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o'],
-						['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o']
+                        ['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o'],
+                        ['o', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o']
                     ]
                 };
 
@@ -218,16 +253,6 @@
                 var table = d3.select("#vis");
                 var thead = table.append("thead").append("tr");
                 var tbody = table.append("tbody");
-
-                function quantizeWeekly(value) {
-                    var uptimes = _.flatten(data[value]),
-                        uptimeValues = _.reduce(uptimes, function (m, u) {
-                            m[u] += 1;
-                            return m;
-                        }, {r: 0, g: 0, y: 0});
-
-                    return _.max(_.keys(uptimeValues), function (k) { return uptimeValues[k]; });
-                }
 
                 function drawCost() {
                     var all = _.flatten(_.reduce(data, function (m, v, k) {
@@ -317,6 +342,34 @@
                     drawChart(week);
                 }
 
+                function drawUptime() {
+                    var uptimes = _.reduce(data, function (m, v) {
+                        return _.flatten(m.concat(v));
+                    }, []);
+
+                    var uptimeValues = _.reduce(uptimes, function (m, u) {
+                        m[u] += 1;
+                        return m;
+                    }, {r: 0, g: 0, y: 0});
+
+                    var total = uptimeValues.r + uptimeValues.g + uptimeValues.y,
+                        totalR = uptimeValues.r / total,
+                        totalG = uptimeValues.g / total,
+                        totalY = uptimeValues.y / total;
+
+                    d3.select("#fully-down")
+                        .data([totalR])
+                        .text(d3.format("%"));
+
+                    d3.select("#partially-down")
+                        .data([totalY])
+                        .text(d3.format("%"));
+
+                    d3.select("#up")
+                        .data([totalG])
+                        .text(d3.format("%"));
+                }
+
                 function drawChart(week) {
                     d3.select("#daterange").text(week);
                     var uptimes = _.flatten(data[week]),
@@ -341,6 +394,7 @@
                 }
 
                 drawWeeks();
+                drawUptime();
                 // drawCost();
 
                 chart = c3.generate({
@@ -385,6 +439,29 @@
                 <div class="item o"></div>
                 No data
             </div>
+        </div>
+
+        <div id="total-uptime">
+            <table class="r-text">
+                <tr>
+                    <td class="title" >Unavailable</td>
+                    <td class="value" id="fully-down"></td>
+                </tr>
+            </table>
+
+            <table class="y-text">
+                <tr>
+                    <td class="title" >Partially Available</td>
+                    <td class="value" id="partially-down"></td>
+                </tr>
+            </table>
+
+            <table class="g-text">
+                <tr>
+                    <td class="title" >Available</td>
+                    <td class="value" id="up"></td>
+                </tr>
+            </table>
         </div>
 
         <!-- <div id="cost&#45;container"> -->
